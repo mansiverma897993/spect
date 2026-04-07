@@ -1,56 +1,91 @@
-# Spam Detection Web Application
+# Spect: Spam Detection System
 
-A very simple yet effective Spam Detection Web App built with **Python**, **Streamlit**, and **Scikit-Learn**. 
-It uses TF-IDF Vectorization and a Multinomial Naive Bayes algorithm to classify messages as `Spam` or `Not Spam`.
+`Spect` is a professional spam detection project built with:
+- **Machine Learning**: TF-IDF + Logistic Regression (with hyperparameter tuning)
+- **Backend (simple and clean)**: Python service module in `backend/model_service.py`
+- **Frontend**: Modern Streamlit UI with confidence scores and model summary
+
+The training pipeline is designed to keep model performance strong while reducing overfitting risk (small train/test gap).
+
+## Features
+
+- Clean backend prediction service
+- Beautiful UI named **Spect: Spam Detection System**
+- Tuned ML model using `GridSearchCV`
+- Stratified train/test split for stable evaluation
+- Saved metrics (train accuracy, test accuracy, F1 score, accuracy gap)
+- Easy local setup
 
 ## Project Structure
-* `requirements.txt`: List of python dependencies.
-* `train_model.py`: Automates dataset downloading, text preprocessing, and trains the machine learning model.
-* `app.py`: The beautiful frontend built with Streamlit!
 
-## How to Run Locally
+- `app.py` - Streamlit frontend
+- `train_model.py` - model training + tuning + evaluation + artifact saving
+- `backend/model_service.py` - backend logic for loading model and predicting
+- `requirements.txt` - dependencies
+- `spam_model.pkl` - trained model artifact (generated after training)
 
-You can run this project locally on your system using the following commands:
+## Quick Start
 
-**1. Clone/Download the repository**
+### 1) Create and activate virtual environment
+
+Windows (PowerShell):
 ```bash
-# Navigate to your desired folder in terminal, then download the files.
-# Make sure you are in the project folder:
-cd path/to/spamdetect
+python -m venv .venv
+.venv\Scripts\Activate.ps1
 ```
 
-**2. Create a Virtual Environment (Recommended)**
-*(This keeps dependencies clean)*
+macOS/Linux:
 ```bash
-python -m venv venv
-
-# Activate on Windows:
-venv\\Scripts\\activate
-
-# Activate on Mac/Linux:
-source venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate
 ```
 
-**3. Install Dependencies**
+### 2) Install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-**4. Train the AI Model**
-This will download the dataset, verify there is no overfitting between Training and Testing accuracy, and save the `.pkl` file.
+### 3) Train model
+
 ```bash
 python train_model.py
 ```
 
-**5. Start the Web App**
+This command will:
+- download the SMS spam dataset
+- tune hyperparameters with cross-validation
+- print train/test metrics
+- save `spam_model.pkl`
+
+### 4) Run frontend
+
 ```bash
 python -m streamlit run app.py
 ```
-A browser window will automatically open at `http://localhost:8501`.
 
-## Easy Deployment
-To deploy this project for free (e.g., to Streamlit Community Cloud):
-1. Push this folder to a GitHub repository.
-2. Sign in to [share.streamlit.io](https://share.streamlit.io/).
-3. Click "New App" and select your repository, branch, and `app.py` stream.
-4. Streamlit will automatically install `requirements.txt` and host your project in seconds!
+Open: [http://localhost:8501](http://localhost:8501)
+
+## Model Quality and Generalization
+
+`train_model.py` reports:
+- training accuracy
+- testing accuracy
+- training F1
+- testing F1
+- accuracy gap
+
+Goal: keep **high test accuracy** and **small train/test gap** (good generalization).
+
+## Notes
+
+- If `spam_model.pkl` is missing, run `python train_model.py` first.
+- The project currently uses the standard SMS dataset from a public URL.
+- For production, retrain regularly with your own latest data.
+
+## Deployment
+
+You can deploy this app to Streamlit Community Cloud:
+1. Push project to GitHub
+2. Open [https://share.streamlit.io/](https://share.streamlit.io/)
+3. Select repository and set main file to `app.py`

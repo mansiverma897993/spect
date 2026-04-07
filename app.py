@@ -1,128 +1,144 @@
 import streamlit as st
-import pickle
-import time
 
-# --- Page Configuration ---
+from backend.model_service import load_artifact, predict_message
+
+
 st.set_page_config(
-    page_title="Spam Detector App",
+    page_title="Spect: Spam Detection System",
     page_icon="🛡️",
-    layout="centered",
-    initial_sidebar_state="collapsed",
+    layout="wide",
 )
 
-# --- Custom CSS (Clean UI) ---
-st.markdown("""
+st.markdown(
+    """
 <style>
-    .stTextArea textarea {
-        border-radius: 10px;
-        border: 2px solid #e0e6ed;
-        transition: border 0.3s ease;
+    .main {
+        background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%);
     }
-    .stTextArea textarea:focus {
-        border-color: #4a90e2 !important;
-        box-shadow: 0 0 5px rgba(74, 144, 226, 0.5);
+    .hero {
+        background: white;
+        border: 1px solid #e4e9f2;
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 8px 25px rgba(23, 40, 80, 0.06);
+        margin-bottom: 1rem;
     }
-    .stButton>button {
-        border-radius: 8px;
-        background-color: #4a90e2;
-        color: white;
-        font-weight: 600;
-        padding: 0.5rem 2rem;
-        transition: all 0.3s ease;
-        border: none;
+    .hero-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #172037;
+        margin-bottom: 0.4rem;
     }
-    .stButton>button:hover {
-        background-color: #357abd;
-        box-shadow: 0 4px 10px rgba(74,144,226,0.3);
-        transform: translateY(-2px);
+    .hero-sub {
+        color: #465269;
+        margin-bottom: 0;
     }
-    .result-box {
-        padding: 20px;
-        border-radius: 10px;
-        margin-top: 20px;
-        text-align: center;
-        font-weight: bold;
-        font-size: 1.2rem;
-        animation: fadeIn 0.5s ease-in-out;
+    .result-card {
+        border-radius: 14px;
+        padding: 1rem;
+        margin-top: 0.75rem;
+        border: 1px solid transparent;
     }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
+    .result-spam {
+        background: #fff2f2;
+        border-color: #f8c9ce;
+        color: #a2252f;
     }
-    
-    .logo-container {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-    
-    .logo-container h1 {
-        margin: 0;
-        padding: 0;
-        font-size: 2.2rem;
+    .result-ham {
+        background: #eefaf2;
+        border-color: #bdebc9;
+        color: #1d7c3e;
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# --- App Header with Beautiful Logo ---
-st.markdown("""
-<div class="logo-container">
-    <svg width="50" height="50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z" fill="#4a90e2"/>
-        <path d="M12 11.99h6c-.46 4.1-2.92 7.74-6 8.92v-8.92z" fill="#357abd"/>
-        <path d="M10.5 16.5l-4-4 1.41-1.41L10.5 13.67l6.09-6.09L18 9l-7.5 7.5z" fill="#ffffff"/>
-    </svg>
-    <h1>Spam Detection System</h1>
+st.markdown(
+    """
+<div class="hero">
+    <div class="hero-title">Spect: Spam Detection System</div>
+    <p class="hero-sub">
+        Production-style spam analysis with an optimized ML pipeline and confidence scores.
+    </p>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-st.markdown("Enter a message below to check if it's **Spam** or **Not Spam (Ham)**. Powered by Machine Learning via TF-IDF & Logistic Regression.")
 
-# --- Load Model ---
 @st.cache_resource
-def load_model():
-    try:
-        with open('spam_model.pkl', 'rb') as f:
-            model = pickle.load(f)
-        return model
-    except FileNotFoundError:
-        return None
+def get_artifact():
+    return load_artifact()
 
-model = load_model()
 
-if model is None:
-    st.error("Model file `spam_model.pkl` not found! Please run `python train_model.py` first to generate it.")
+try:
+    artifact = get_artifact()
+except Exception as exc:
+    st.error(str(exc))
+    st.info("Run `python train_model.py` once, then restart this app.")
     st.stop()
 
-# --- User Input ---
-message = st.text_area("✍️ Message Content", placeholder="Type or paste your message here...", height=150)
+metrics = artifact.get("metrics", {})
+best_params = artifact.get("best_params", {})
+dataset_size = artifact.get("dataset_size", 0)
 
-# --- Prediction Logic ---
-if st.button("Detect Spam 🔍"):
-    if message.strip() == "":
-        st.warning("Please enter a message to classify!")
+with st.sidebar:
+    st.header("Model Summary")
+    st.metric("Dataset size", f"{dataset_size}")
+    st.metric("Train Accuracy", f"{metrics.get('train_accuracy', 0.0):.4f}")
+    st.metric("Test Accuracy", f"{metrics.get('test_accuracy', 0.0):.4f}")
+    st.metric("Accuracy Gap", f"{metrics.get('accuracy_gap', 0.0):.4f}")
+    with st.expander("Best Hyperparameters"):
+        st.json(best_params)
+
+left_col, right_col = st.columns([2, 1], gap="large")
+
+with left_col:
+    st.subheader("Message Classifier")
+    text = st.text_area(
+        "Enter message",
+        placeholder="Paste SMS, email snippet, or chat text...",
+        height=220,
+    )
+    run_predict = st.button("Analyze Message", use_container_width=True)
+
+with right_col:
+    st.subheader("Quick Notes")
+    st.markdown("- Class labels: `ham` and `spam`")
+    st.markdown("- Scores are calibrated probabilities")
+    st.markdown("- Best for short text content")
+
+if run_predict:
+    if not text.strip():
+        st.warning("Please enter a message before running analysis.")
     else:
-        with st.spinner("Analyzing message..."):
-            time.sleep(0.5) 
-            
-            prediction = model.predict([message])[0]
-            probability = model.predict_proba([message])[0]
-            
-            if prediction == 1:
-                prob = probability[1] * 100
-                st.markdown(f"""
-                <div class="result-box" style="background-color: #ffe5e5; color: #d32f2f; border: 1px solid #ffcdd2;">
-                    🚨 SPAM DETECTED! <br><span style="font-size: 0.9rem; font-weight: normal;">(Confidence: {prob:.1f}%)</span>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                prob = probability[0] * 100
-                st.markdown(f"""
-                <div class="result-box" style="background-color: #e8f5e9; color: #388e3c; border: 1px solid #c8e6c9;">
-                    ✅ NOT SPAM (HAM) <br><span style="font-size: 0.9rem; font-weight: normal;">(Confidence: {prob:.1f}%)</span>
-                </div>
-                """, unsafe_allow_html=True)
+        result = predict_message(text, artifact)
+        spam_prob = result["spam_probability"] * 100
+        ham_prob = result["ham_probability"] * 100
+        confidence = result["confidence"] * 100
 
-st.markdown("---")
-st.caption("Developed with ❤️ using Streamlit & Scikit-Learn | Local ML Project")
+        if result["label"] == "spam":
+            st.markdown(
+                f"""
+                <div class="result-card result-spam">
+                    <h3>Spam detected</h3>
+                    <p><strong>Confidence:</strong> {confidence:.2f}%</p>
+                    <p><strong>Spam score:</strong> {spam_prob:.2f}% | <strong>Ham score:</strong> {ham_prob:.2f}%</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f"""
+                <div class="result-card result-ham">
+                    <h3>Likely legitimate message (ham)</h3>
+                    <p><strong>Confidence:</strong> {confidence:.2f}%</p>
+                    <p><strong>Ham score:</strong> {ham_prob:.2f}% | <strong>Spam score:</strong> {spam_prob:.2f}%</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+st.caption("Spect uses TF-IDF + Logistic Regression with hyperparameter tuning.")
