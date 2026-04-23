@@ -77,11 +77,6 @@ Open: [http://localhost:8501](http://localhost:8501)
 
 Goal: keep **high test accuracy** and **small train/test gap** (good generalization).
 
-## Notes
-
-- If `spam_model.pkl` is missing, run `python train_model.py` first.
-- The project currently uses the standard SMS dataset from a public URL.
-- For production, retrain regularly with your own latest data.
 
 ## Deployment
 
