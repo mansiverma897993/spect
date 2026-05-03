@@ -1,4 +1,4 @@
-# Spect: Spam Detection System
+# Spect : Spam Detection System
 
 `Spect` is a professional spam detection project built with:
 - **Machine Learning**: TF-IDF + Logistic Regression (with hyperparameter tuning)
@@ -14,7 +14,6 @@ The training pipeline is designed to keep model performance strong while reducin
 - Tuned ML model using `GridSearchCV`
 - Stratified train/test split for stable evaluation
 - Saved metrics (train accuracy, test accuracy, F1 score, accuracy gap)
-- Easy local setup
 
 ## Project Structure
 
